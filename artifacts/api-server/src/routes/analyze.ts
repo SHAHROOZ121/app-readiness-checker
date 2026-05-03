@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import { AnalyzeAppBody } from "@workspace/api-zod";
+import { ai } from "@workspace/integrations-gemini-ai";
 
 const router: IRouter = Router();
 
@@ -11,12 +12,6 @@ router.post("/analyze", async (req, res) => {
   }
 
   const { url } = parsed.data;
-
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    res.status(500).json({ error: "GEMINI_API_KEY is not configured" });
-    return;
-  }
 
   const prompt = `You are an app launch readiness expert. Analyze the following app URL and produce a structured readiness report.
 
@@ -49,54 +44,26 @@ Respond ONLY with a valid JSON object in this exact format (no markdown, no code
 }`;
 
   try {
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.4,
-            maxOutputTokens: 1024,
-          },
-        }),
-      }
-    );
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      config: { maxOutputTokens: 8192 },
+    });
 
-    if (!geminiRes.ok) {
-      const errText = await geminiRes.text();
-      req.log.error({ status: geminiRes.status, body: errText }, "Gemini API error");
+    const rawText = response.text ?? "";
+    const cleaned = rawText
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/\s*```\s*$/i, "")
+      .trim();
 
-      if (geminiRes.status === 429) {
-        res.status(500).json({ error: "Gemini API quota exceeded. Please wait a minute and try again, or check your API key's billing settings at https://ai.google.dev" });
-      } else if (geminiRes.status === 400) {
-        res.status(500).json({ error: "Invalid Gemini API key. Please check your GEMINI_API_KEY secret." });
-      } else {
-        res.status(500).json({ error: `Gemini API error (${geminiRes.status}). Please try again shortly.` });
-      }
-      return;
-    }
-
-    const geminiData = await geminiRes.json() as {
-      candidates?: Array<{
-        content?: { parts?: Array<{ text?: string }> };
-      }>;
-    };
-
-    const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-
-    // Strip any accidental markdown code fences
-    const cleaned = rawText.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
-
-    let parsed2: {
+    let data: {
       overallPercentage: number;
       categories: Array<{ name: string; score: number; summary: string }>;
       topFixes: string[];
     };
 
     try {
-      parsed2 = JSON.parse(cleaned);
+      data = JSON.parse(cleaned);
     } catch {
       req.log.error({ raw: rawText }, "Failed to parse Gemini JSON response");
       res.status(500).json({ error: "Could not parse analysis response" });
@@ -105,13 +72,13 @@ Respond ONLY with a valid JSON object in this exact format (no markdown, no code
 
     res.json({
       url,
-      overallPercentage: parsed2.overallPercentage,
-      categories: parsed2.categories,
-      topFixes: parsed2.topFixes,
+      overallPercentage: data.overallPercentage,
+      categories: data.categories,
+      topFixes: data.topFixes,
     });
   } catch (err) {
     req.log.error({ err }, "Error calling Gemini API");
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: "Analysis failed. Please try again." });
   }
 });
 
