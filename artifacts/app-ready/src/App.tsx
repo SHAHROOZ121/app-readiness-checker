@@ -167,11 +167,14 @@ function AppReady() {
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="flex items-center gap-2 text-destructive bg-destructive/10 px-4 py-3 rounded-lg border border-destructive/20"
+                className="flex items-start gap-3 text-destructive bg-destructive/10 px-4 py-3 rounded-lg border border-destructive/20 max-w-md text-left"
                 data-testid="error-message"
               >
-                <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                <p>Failed to analyze the app. Please check the URL and try again.</p>
+                <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                <p className="text-sm">
+                  {(analyzeApp.error as { response?: { data?: { error?: string } } })?.response?.data?.error
+                    ?? "Failed to analyze the app. Please check the URL and try again."}
+                </p>
               </motion.div>
             )}
           </motion.div>

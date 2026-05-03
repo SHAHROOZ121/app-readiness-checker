@@ -50,7 +50,7 @@ Respond ONLY with a valid JSON object in this exact format (no markdown, no code
 
   try {
     const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -67,7 +67,14 @@ Respond ONLY with a valid JSON object in this exact format (no markdown, no code
     if (!geminiRes.ok) {
       const errText = await geminiRes.text();
       req.log.error({ status: geminiRes.status, body: errText }, "Gemini API error");
-      res.status(500).json({ error: "Failed to contact Gemini API" });
+
+      if (geminiRes.status === 429) {
+        res.status(500).json({ error: "Gemini API quota exceeded. Please wait a minute and try again, or check your API key's billing settings at https://ai.google.dev" });
+      } else if (geminiRes.status === 400) {
+        res.status(500).json({ error: "Invalid Gemini API key. Please check your GEMINI_API_KEY secret." });
+      } else {
+        res.status(500).json({ error: `Gemini API error (${geminiRes.status}). Please try again shortly.` });
+      }
       return;
     }
 
