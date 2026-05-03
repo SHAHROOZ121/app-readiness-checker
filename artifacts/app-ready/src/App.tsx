@@ -100,6 +100,13 @@ function AppReady() {
     analyzeApp.reset();
   };
 
+  const getLaunchLabel = (pct: number) => {
+    if (pct >= 90) return { text: "🚀 Ready to Launch!", color: "text-green-500" };
+    if (pct >= 75) return { text: "✅ Good to Launch!", color: "text-green-400" };
+    if (pct >= 60) return { text: "⚠️ Almost Ready", color: "text-yellow-500" };
+    return { text: "🔧 Needs Work First", color: "text-red-500" };
+  };
+
   const getScoreColor = (score: number) => {
     if (score >= 8) return "bg-green-500";
     if (score >= 5) return "bg-yellow-500";
@@ -219,8 +226,14 @@ function AppReady() {
                 {analyzeApp.data.url}
               </p>
               <h2 className="text-3xl font-bold text-foreground">Readiness Score</h2>
-              <div className="pt-6 flex justify-center">
+              <div className="pt-6 flex flex-col items-center gap-3">
                 <CircularProgress value={analyzeApp.data.overallPercentage} />
+                <span
+                  className={`text-lg font-semibold ${getLaunchLabel(analyzeApp.data.overallPercentage).color}`}
+                  data-testid="text-launch-label"
+                >
+                  {getLaunchLabel(analyzeApp.data.overallPercentage).text}
+                </span>
               </div>
             </div>
 
