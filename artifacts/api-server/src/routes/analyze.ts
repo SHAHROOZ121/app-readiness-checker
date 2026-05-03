@@ -25,7 +25,7 @@ Evaluate the app across these 4 categories and score each out of 10:
 
 Also provide:
 - An overall readiness percentage (0-100) based on the category scores
-- The top 3 most important things to fix before launching, written in plain simple English
+- The top 3 recommended improvements, written in plain simple English
 
 Respond ONLY with a valid JSON object in this exact format (no markdown, no code fences):
 {

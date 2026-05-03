@@ -267,7 +267,7 @@ function AppReady() {
               >
                 <h3 className="text-xl font-bold flex items-center gap-2">
                   <AlertTriangle className="text-primary w-5 h-5" />
-                  Top 3 Fixes Before Launch
+                  Recommended Improvements
                 </h3>
                 <ul className="space-y-3">
                   {analyzeApp.data.topFixes.map((fix, idx) => (
