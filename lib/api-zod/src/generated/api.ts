@@ -14,3 +14,28 @@ import * as zod from "zod";
 export const HealthCheckResponse = zod.object({
   status: zod.string(),
 });
+
+/**
+ * Analyzes an app URL and returns a readiness report
+ * @summary Analyze app readiness
+ */
+export const AnalyzeAppBody = zod.object({
+  url: zod.string().describe("The app URL to analyze"),
+});
+
+export const AnalyzeAppResponse = zod.object({
+  url: zod.string(),
+  overallPercentage: zod
+    .number()
+    .describe("Overall readiness percentage (0-100)"),
+  categories: zod.array(
+    zod.object({
+      name: zod.string(),
+      score: zod.number(),
+      summary: zod.string(),
+    }),
+  ),
+  topFixes: zod
+    .array(zod.string())
+    .describe("Top 3 things to fix before launching"),
+});

@@ -24,4 +24,22 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
 - `pnpm --filter @workspace/api-server run dev` — run API server locally
 
+## Artifacts
+
+### AppReady (`artifacts/app-ready`)
+- React + Vite single-page app at `/`
+- Users paste an app URL, click "Check My App", and get an AI-powered readiness report
+- Three states: landing, loading, results
+- Results show overall readiness % (circular progress), 4 category scores (Performance, Mobile Friendliness, Security, SEO), and top 3 fixes
+
+### API Server (`artifacts/api-server`)
+- Express 5 server at `/api`
+- `POST /api/analyze` — takes `{ url }`, calls Google Gemini API, returns readiness report
+- Requires `GEMINI_API_KEY` environment secret
+
+## Environment Secrets
+
+- `SESSION_SECRET` — session signing key
+- `GEMINI_API_KEY` — Google Gemini API key for app analysis
+
 See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.

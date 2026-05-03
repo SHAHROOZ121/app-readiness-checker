@@ -5,20 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-export interface HealthStatus {
-  status: string;
-}
-
-export interface AnalyzeRequest {
-  /** The app URL to analyze */
-  url: string;
-}
-
-export interface CategoryScore {
-  name: string;
-  score: number;
-  summary: string;
-}
+import type { CategoryScore } from "./categoryScore";
 
 export interface AnalyzeResult {
   url: string;
@@ -27,8 +14,4 @@ export interface AnalyzeResult {
   categories: CategoryScore[];
   /** Top 3 things to fix before launching */
   topFixes: string[];
-}
-
-export interface ErrorResponse {
-  error: string;
 }
