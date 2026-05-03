@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: analyze
+    description: App readiness analysis
 paths:
   /healthz:
     get:
@@ -24,6 +26,37 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /analyze:
+    post:
+      operationId: analyzeApp
+      tags: [analyze]
+      summary: Analyze app readiness
+      description: Analyzes an app URL and returns a readiness report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalyzeRequest"
+      responses:
+        "200":
+          description: Analysis complete
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyzeResult"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +66,53 @@ components:
           type: string
       required:
         - status
-
+    AnalyzeRequest:
+      type: object
+      properties:
+        url:
+          type: string
+          description: The app URL to analyze
+      required:
+        - url
+    CategoryScore:
+      type: object
+      properties:
+        name:
+          type: string
+        score:
+          type: number
+        summary:
+          type: string
+      required:
+        - name
+        - score
+        - summary
+    AnalyzeResult:
+      type: object
+      properties:
+        url:
+          type: string
+        overallPercentage:
+          type: number
+          description: Overall readiness percentage (0-100)
+        categories:
+          type: array
+          items:
+            $ref: "#/components/schemas/CategoryScore"
+        topFixes:
+          type: array
+          items:
+            type: string
+          description: Top 3 things to fix before launching
+      required:
+        - url
+        - overallPercentage
+        - categories
+        - topFixes
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error

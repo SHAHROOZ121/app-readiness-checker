@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "AppReady"
+version = "1.0.0"
+id = "artifacts/app-ready"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21632
+
+[services.development]
+run = "pnpm --filter @workspace/app-ready run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/app-ready", "run", "build" ]
+publicDir = "artifacts/app-ready/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21632"
+BASE_PATH = "/"
