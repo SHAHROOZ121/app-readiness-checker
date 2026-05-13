@@ -1,8 +1,6 @@
 {
   "buildCommand": "pnpm --filter @workspace/app-ready run build",
-  "outputDirectory": "artifacts/app-ready/dist/public",
+  "outputDirectory": "dist/public",
   "installCommand": "pnpm install --no-frozen-lockfile",
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
