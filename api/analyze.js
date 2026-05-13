@@ -1,6 +1,4 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
-
-const PROMPT_TEMPLATE = (url: string) => `You are an app launch readiness expert. Analyze the following app URL and produce a structured readiness report.
+const PROMPT_TEMPLATE = (url) => `You are an app launch readiness expert. Analyze the following app URL and produce a structured readiness report.
 
 App URL: ${url}
 
@@ -30,7 +28,7 @@ Respond ONLY with a valid JSON object in this exact format (no markdown, no code
   ]
 }`;
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -43,8 +41,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const body = req.body as { url?: unknown };
-  const url = body?.url;
+  const url = req.body?.url;
 
   if (!url || typeof url !== "string") {
     return res.status(400).json({ error: "Invalid request body: url is required" });
@@ -52,7 +49,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    return res.status(500).json({ error: "GEMINI_API_KEY is not configured. Add it in your Vercel project environment variables." });
+    return res.status(500).json({
+      error: "GEMINI_API_KEY is not configured. Add it in your Vercel project environment variables.",
+    });
   }
 
   try {
@@ -77,24 +76,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: `Gemini API error (${geminiRes.status}). Please try again.` });
     }
 
-    const geminiData = await geminiRes.json() as {
-      candidates?: Array<{
-        content?: { parts?: Array<{ text?: string }> };
-      }>;
-    };
-
+    const geminiData = await geminiRes.json();
     const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
     const cleaned = rawText
       .replace(/^```(?:json)?\s*/i, "")
       .replace(/\s*```\s*$/i, "")
       .trim();
 
-    let data: {
-      overallPercentage: number;
-      categories: Array<{ name: string; score: number; summary: string }>;
-      topFixes: string[];
-    };
-
+    let data;
     try {
       data = JSON.parse(cleaned);
     } catch {
