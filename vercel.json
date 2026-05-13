@@ -1,4 +1,4 @@
 {
-  "buildCommand": "npx vite build",
+  "buildCommand": "pnpm --filter@workspace/app-ready build",
   "outputDirectory": "dist/public"
 }
