@@ -2,7 +2,13 @@
   "installCommand": "pnpm install --no-frozen-lockfile",
   "buildCommand": "pnpm --filter @workspace/app-ready run build && rm -rf ./public && cp -r artifacts/app-ready/dist/public ./public",
   "outputDirectory": "public",
+  "functions": {
+    "api/analyze.js": {
+      "maxDuration": 60
+    }
+  },
   "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

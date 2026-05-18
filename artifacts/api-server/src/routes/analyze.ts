@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { AnalyzeAppBody } from "@workspace/api-zod";
-import { ai } from "@workspace/integrations-gemini-ai";
+import { analyzeWithPageSpeed, PageSpeedError } from "@workspace/integrations-pagespeed";
 
 const router: IRouter = Router();
 
@@ -13,71 +13,25 @@ router.post("/analyze", async (req, res) => {
 
   const { url } = parsed.data;
 
-  const prompt = `You are an app launch readiness expert. Analyze the following app URL and produce a structured readiness report.
-
-App URL: ${url}
-
-Evaluate the app across these 4 categories and score each out of 10:
-1. Performance - how fast and responsive the app feels
-2. Mobile Friendliness - how well it works on mobile devices
-3. Security Basics - HTTPS, basic security headers, no obvious vulnerabilities
-4. SEO Basics - meta tags, title, description, indexability
-
-Also provide:
-- An overall readiness percentage (0-100) based on the category scores
-- The top 3 recommended improvements, written in plain simple English
-
-Respond ONLY with a valid JSON object in this exact format (no markdown, no code fences):
-{
-  "overallPercentage": <number 0-100>,
-  "categories": [
-    { "name": "Performance", "score": <number 0-10>, "summary": "<one sentence plain English summary>" },
-    { "name": "Mobile Friendliness", "score": <number 0-10>, "summary": "<one sentence plain English summary>" },
-    { "name": "Security Basics", "score": <number 0-10>, "summary": "<one sentence plain English summary>" },
-    { "name": "SEO Basics", "score": <number 0-10>, "summary": "<one sentence plain English summary>" }
-  ],
-  "topFixes": [
-    "<fix 1 in plain English>",
-    "<fix 2 in plain English>",
-    "<fix 3 in plain English>"
-  ]
-}`;
+  const apiKey = process.env.PAGESPEED_API_KEY;
+  if (!apiKey) {
+    res.status(500).json({
+      error: "PAGESPEED_API_KEY is not configured.",
+    });
+    return;
+  }
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      config: { maxOutputTokens: 8192 },
-    });
-
-    const rawText = response.text ?? "";
-    const cleaned = rawText
-      .replace(/^```(?:json)?\s*/i, "")
-      .replace(/\s*```\s*$/i, "")
-      .trim();
-
-    let data: {
-      overallPercentage: number;
-      categories: Array<{ name: string; score: number; summary: string }>;
-      topFixes: string[];
-    };
-
-    try {
-      data = JSON.parse(cleaned);
-    } catch {
-      req.log.error({ raw: rawText }, "Failed to parse Gemini JSON response");
-      res.status(500).json({ error: "Could not parse analysis response" });
+    const result = await analyzeWithPageSpeed(url, apiKey);
+    res.json(result);
+  } catch (err) {
+    if (err instanceof PageSpeedError) {
+      req.log.error({ err: err.message, status: err.status }, "PageSpeed analysis error");
+      res.status(err.status).json({ error: err.message });
       return;
     }
 
-    res.json({
-      url,
-      overallPercentage: data.overallPercentage,
-      categories: data.categories,
-      topFixes: data.topFixes,
-    });
-  } catch (err) {
-    req.log.error({ err }, "Error calling Gemini API");
+    req.log.error({ err }, "Error calling PageSpeed API");
     res.status(500).json({ error: "Analysis failed. Please try again." });
   }
 });
