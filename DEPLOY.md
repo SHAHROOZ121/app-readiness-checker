@@ -19,7 +19,16 @@ If Build Command is set to the old value
 `pnpm --filter @workspace/app-ready run build && rm -rf ./public && ...`  
 deploys will fail when Root Directory is `artifacts/api-server` (wrong copy paths). Clear the override and redeploy.
 
-## Environment variables
+## Environment variables (required for URL checks)
+
+Without this, the app loads but **every analyze request fails**.
+
+1. Get a key: [Google Cloud Console](https://console.cloud.google.com/) → APIs & Services → enable **PageSpeed Insights API** → Credentials → Create API key.
+2. In Vercel → your project → **Settings** → **Environment Variables**:
+   - Name: `PAGESPEED_API_KEY`
+   - Value: your API key
+   - Environments: Production (and Preview if you use preview URLs)
+3. **Redeploy** after saving (Deployments → ⋯ → Redeploy).
 
 | Variable | Required |
 |----------|----------|

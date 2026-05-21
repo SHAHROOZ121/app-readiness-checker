@@ -3,7 +3,7 @@ import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useAnalyzeApp } from "@workspace/api-client-react";
+import { useAnalyzeApp, type ErrorType } from "@workspace/api-client-react";
 import { motion } from "framer-motion";
 import {
   Loader2,
@@ -69,6 +69,22 @@ function CircularProgress({ value }: { value: number }) {
       </div>
     </div>
   );
+}
+
+function getAnalyzeErrorMessage(error: unknown): string {
+  if (error && typeof error === "object" && "data" in error) {
+    const data = (error as ErrorType<{ error?: string }>).data;
+    if (data?.error) {
+      return data.error;
+    }
+  }
+
+  if (error instanceof Error && error.message) {
+    const detail = error.message.match(/^HTTP \d+[^:]*: (.+)$/);
+    return detail?.[1] ?? error.message;
+  }
+
+  return "Failed to analyze the app. Please check the URL and try again.";
 }
 
 function AppReady() {
@@ -179,8 +195,7 @@ function AppReady() {
               >
                 <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                 <p className="text-sm">
-                  {(analyzeApp.error as { response?: { data?: { error?: string } } })?.response?.data?.error
-                    ?? "Failed to analyze the app. Please check the URL and try again."}
+                  {getAnalyzeErrorMessage(analyzeApp.error)}
                 </p>
               </motion.div>
             )}
