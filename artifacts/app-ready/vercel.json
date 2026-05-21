@@ -1,6 +1,6 @@
 {
   "installCommand": "cd ../.. && pnpm install --no-frozen-lockfile",
-  "buildCommand": "VERCEL_OUTPUT_DIR=public sh ../../scripts/vercel-build.sh",
+  "buildCommand": "cd ../.. && VERCEL_OUTPUT_DIR=artifacts/app-ready/public pnpm run vercel-build",
   "outputDirectory": "public",
   "functions": {
     "api/analyze.js": {
