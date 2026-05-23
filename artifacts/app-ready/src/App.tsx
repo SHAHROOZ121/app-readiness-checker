@@ -293,10 +293,15 @@ function AppReady() {
                 transition={{ delay: 0.7 }}
                 className="bg-secondary/50 border border-border rounded-xl p-6 md:p-8 space-y-4"
               >
-                <h3 className="text-xl font-bold flex items-center gap-2">
-                  <AlertTriangle className="text-primary w-5 h-5" />
-                  Recommended Improvements
-                </h3>
+                <div className="space-y-1">
+                  <h3 className="text-xl font-bold flex items-center gap-2">
+                    <AlertTriangle className="text-primary w-5 h-5" />
+                    What to fix first
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Start with #1. Plain steps you can do yourself or send to whoever built your app.
+                  </p>
+                </div>
                 <ul className="space-y-3">
                   {analyzeApp.data.topFixes.map((fix, idx) => (
                     <li
