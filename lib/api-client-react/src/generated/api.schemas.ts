@@ -20,13 +20,20 @@ export interface CategoryScore {
   summary: string;
 }
 
+export interface TopFix {
+  /** Plain-English explanation of the issue */
+  description: string;
+  /** Ready-to-paste prompt for a no-code builder to fix the issue */
+  prompt: string;
+}
+
 export interface AnalyzeResult {
   url: string;
   /** Overall readiness percentage (0-100) */
   overallPercentage: number;
   categories: CategoryScore[];
-  /** Top 3 things to fix before launching */
-  topFixes: string[];
+  /** Top 3 things to fix before launching, each with a copyable fix prompt */
+  topFixes: TopFix[];
 }
 
 export interface ErrorResponse {

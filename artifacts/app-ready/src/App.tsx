@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   XCircle,
   RefreshCw,
+  Copy,
 } from "lucide-react";
 import NotFound from "@/pages/not-found";
 
@@ -90,6 +91,7 @@ function getAnalyzeErrorMessage(error: unknown): string {
 function AppReady() {
   const [url, setUrl] = useState("");
   const [state, setState] = useState<"landing" | "loading" | "results">("landing");
+  const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
 
   const analyzeApp = useAnalyzeApp();
 
@@ -302,17 +304,42 @@ function AppReady() {
                     Start with #1. Plain steps you can do yourself or send to whoever built your app.
                   </p>
                 </div>
-                <ul className="space-y-3">
+                <ul className="space-y-5">
                   {analyzeApp.data.topFixes.map((fix, idx) => (
                     <li
                       key={idx}
-                      className="flex gap-3 text-muted-foreground"
+                      className="flex flex-col gap-2"
                       data-testid={`item-fix-${idx}`}
                     >
-                      <span className="font-mono text-primary font-bold flex-shrink-0">
-                        {idx + 1}.
-                      </span>
-                      <span>{fix}</span>
+                      <div className="flex gap-3 text-muted-foreground">
+                        <span className="font-mono text-primary font-bold flex-shrink-0">
+                          {idx + 1}.
+                        </span>
+                        <span>{fix.description}</span>
+                      </div>
+                      <div className="pl-6">
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(fix.prompt);
+                            setCopiedIdx(idx);
+                            setTimeout(() => setCopiedIdx(null), 2000);
+                          }}
+                          className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-border bg-background hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
+                          data-testid={`button-copy-prompt-${idx}`}
+                        >
+                          {copiedIdx === idx ? (
+                            <>
+                              <CheckCircle2 className="w-3 h-3 text-green-500" />
+                              <span className="text-green-500 font-medium">Copied!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3 h-3" />
+                              Copy fix prompt
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </li>
                   ))}
                 </ul>

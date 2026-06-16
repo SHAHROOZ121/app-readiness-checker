@@ -87,6 +87,18 @@ components:
         - name
         - score
         - summary
+    TopFix:
+      type: object
+      properties:
+        description:
+          type: string
+          description: Plain-English explanation of the issue
+        prompt:
+          type: string
+          description: Ready-to-paste prompt for a no-code builder to fix the issue
+      required:
+        - description
+        - prompt
     AnalyzeResult:
       type: object
       properties:
@@ -102,8 +114,8 @@ components:
         topFixes:
           type: array
           items:
-            type: string
-          description: Top 3 things to fix before launching
+            $ref: "#/components/schemas/TopFix"
+          description: Top 3 things to fix before launching, each with a copyable fix prompt
       required:
         - url
         - overallPercentage
