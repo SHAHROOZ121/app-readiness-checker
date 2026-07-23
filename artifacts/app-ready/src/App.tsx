@@ -503,10 +503,35 @@ function AppReady() {
                         {expandedPromptIdx === idx && (
                           <div
                             ref={expandedPromptRef}
-                            className="bg-muted text-muted-foreground font-mono text-xs p-3 rounded-md border border-border whitespace-pre-wrap break-words"
+                            className="bg-muted rounded-md border border-border overflow-hidden"
                             data-testid={`prompt-preview-${idx}`}
                           >
-                            {fix.prompt}
+                            <div className="text-muted-foreground font-mono text-xs p-3 whitespace-pre-wrap break-words">
+                              {fix.prompt}
+                            </div>
+                            <div className="flex justify-end px-3 py-2 border-t border-border bg-muted/50">
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(fix.prompt);
+                                  setCopiedIdx(idx);
+                                  setTimeout(() => setCopiedIdx(null), 2000);
+                                }}
+                                className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded border border-border/50 bg-background hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
+                                data-testid={`button-copy-prompt-in-preview-${idx}`}
+                              >
+                                {copiedIdx === idx ? (
+                                  <>
+                                    <CheckCircle2 className="w-3 h-3 text-green-500" />
+                                    <span className="text-green-500 font-medium">Copied!</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="w-3 h-3" />
+                                    Copy Prompt
+                                  </>
+                                )}
+                              </button>
+                            </div>
                           </div>
                         )}
                       </div>
