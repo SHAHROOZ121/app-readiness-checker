@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -92,8 +92,53 @@ function AppReady() {
   const [url, setUrl] = useState("");
   const [state, setState] = useState<"landing" | "loading" | "results">("landing");
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+  const [messageIdx, setMessageIdx] = useState(0);
+  const [progress, setProgress] = useState(0);
+
+  const messages = [
+    "Checking your app speed...",
+    "Testing mobile friendliness...",
+    "Running security checks...",
+    "Analyzing SEO...",
+    "Almost done — generating fixes...",
+  ];
 
   const analyzeApp = useAnalyzeApp();
+
+  // Rotate messages every 6-8 seconds while loading
+  useEffect(() => {
+    if (state !== "loading") return;
+
+    const messageInterval = setInterval(() => {
+      setMessageIdx((prev) => (prev + 1) % messages.length);
+    }, 6500 + Math.random() * 1500); // 6.5-8 seconds
+
+    return () => clearInterval(messageInterval);
+  }, [state, messages.length]);
+
+  // Animate progress bar over ~35 seconds, hold at 95% until results arrive
+  useEffect(() => {
+    if (state !== "loading") return;
+
+    setProgress(0);
+    setMessageIdx(0);
+
+    const progressInterval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 95) return 95; // Hold at 95% until results
+        return prev + 100 / 350; // Reach ~100% in 35 seconds (350 * 100ms ticks)
+      });
+    }, 100);
+
+    return () => clearInterval(progressInterval);
+  }, [state]);
+
+  // Jump to 100% when results arrive
+  useEffect(() => {
+    if (state === "results") {
+      setProgress(100);
+    }
+  }, [state]);
 
   const handleCheck = (e: React.FormEvent) => {
     e.preventDefault();
@@ -210,19 +255,45 @@ function AppReady() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.3 }}
-            className="flex flex-col items-center justify-center space-y-6 py-20"
+            className="flex flex-col items-center justify-center space-y-8 py-20"
             data-testid="loading-state"
           >
-            <div className="relative w-20 h-20 flex items-center justify-center">
-              <Loader2 className="w-10 h-10 text-primary animate-spin" />
+            <div className="space-y-3 w-full max-w-md">
+              <h3
+                className="text-xl font-medium text-foreground tracking-tight h-6"
+                data-testid="text-loading"
+              >
+                <motion.div
+                  key={`message-${messageIdx}`}
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 4 }}
+                  transition={{ duration: 0.4 }}
+                >
+                  {messages[messageIdx]}
+                </motion.div>
+              </h3>
+
+              <div className="space-y-2">
+                <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full bg-primary"
+                    initial={{ width: "0%" }}
+                    animate={{ width: `${progress}%` }}
+                    transition={{ duration: 0.3 }}
+                    data-testid="progress-bar"
+                  />
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-muted-foreground">
+                    {Math.round(progress)}%
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    Usually takes about 30 seconds
+                  </span>
+                </div>
+              </div>
             </div>
-            <h3
-              className="text-xl font-medium text-foreground tracking-tight"
-              data-testid="text-loading"
-            >
-              Analyzing your app...
-            </h3>
-            <p className="text-muted-foreground text-sm">This may take a few seconds</p>
           </motion.div>
         )}
 
