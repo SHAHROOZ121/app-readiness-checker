@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -15,6 +15,8 @@ import {
   RefreshCw,
   Copy,
   RotateCw,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import NotFound from "@/pages/not-found";
 
@@ -134,8 +136,10 @@ function AppReady() {
   const [url, setUrl] = useState("");
   const [state, setState] = useState<"landing" | "loading" | "results">("landing");
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+  const [expandedPromptIdx, setExpandedPromptIdx] = useState<number | null>(null);
   const [messageIdx, setMessageIdx] = useState(0);
   const [progress, setProgress] = useState(0);
+  const expandedPromptRef = useRef<HTMLDivElement>(null);
 
   const messages = [
     "Checking your app speed...",
@@ -181,6 +185,15 @@ function AppReady() {
       setProgress(100);
     }
   }, [state]);
+
+  // Scroll expanded prompt into view
+  useEffect(() => {
+    if (expandedPromptIdx !== null && expandedPromptRef.current) {
+      setTimeout(() => {
+        expandedPromptRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }, 100);
+    }
+  }, [expandedPromptIdx]);
 
   const handleCheck = (e: React.FormEvent) => {
     e.preventDefault();
@@ -440,28 +453,62 @@ function AppReady() {
                         </span>
                         <span>{fix.description}</span>
                       </div>
-                      <div className="pl-6">
-                        <button
-                          onClick={() => {
-                            navigator.clipboard.writeText(fix.prompt);
-                            setCopiedIdx(idx);
-                            setTimeout(() => setCopiedIdx(null), 2000);
-                          }}
-                          className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-border bg-background hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
-                          data-testid={`button-copy-prompt-${idx}`}
-                        >
-                          {copiedIdx === idx ? (
-                            <>
-                              <CheckCircle2 className="w-3 h-3 text-green-500" />
-                              <span className="text-green-500 font-medium">Copied!</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="w-3 h-3" />
-                              Copy fix prompt
-                            </>
-                          )}
-                        </button>
+                      <div className="pl-6 flex flex-col gap-3">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(fix.prompt);
+                              setCopiedIdx(idx);
+                              setTimeout(() => setCopiedIdx(null), 2000);
+                            }}
+                            className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-border bg-background hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
+                            data-testid={`button-copy-prompt-${idx}`}
+                          >
+                            {copiedIdx === idx ? (
+                              <>
+                                <CheckCircle2 className="w-3 h-3 text-green-500" />
+                                <span className="text-green-500 font-medium">Copied!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3 h-3" />
+                                Copy fix prompt
+                              </>
+                            )}
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (expandedPromptIdx === idx) {
+                                setExpandedPromptIdx(null);
+                              } else {
+                                setExpandedPromptIdx(idx);
+                              }
+                            }}
+                            className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-border bg-background hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
+                            data-testid={`button-preview-prompt-${idx}`}
+                          >
+                            {expandedPromptIdx === idx ? (
+                              <>
+                                <EyeOff className="w-3 h-3" />
+                                Hide Prompt
+                              </>
+                            ) : (
+                              <>
+                                <Eye className="w-3 h-3" />
+                                Preview Prompt
+                              </>
+                            )}
+                          </button>
+                        </div>
+                        {expandedPromptIdx === idx && (
+                          <div
+                            ref={expandedPromptRef}
+                            className="bg-muted text-muted-foreground font-mono text-xs p-3 rounded-md border border-border whitespace-pre-wrap break-words"
+                            data-testid={`prompt-preview-${idx}`}
+                          >
+                            {fix.prompt}
+                          </div>
+                        )}
                       </div>
                     </li>
                   ))}
