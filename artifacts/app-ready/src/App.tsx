@@ -14,6 +14,7 @@ import {
   XCircle,
   RefreshCw,
   Copy,
+  RotateCw,
 } from "lucide-react";
 import NotFound from "@/pages/not-found";
 
@@ -73,19 +74,60 @@ function CircularProgress({ value }: { value: number }) {
 }
 
 function getAnalyzeErrorMessage(error: unknown): string {
+  let errorMessage = "";
+
   if (error && typeof error === "object" && "data" in error) {
     const data = (error as ErrorType<{ error?: string }>).data;
     if (data?.error) {
-      return data.error;
+      errorMessage = data.error;
     }
-  }
-
-  if (error instanceof Error && error.message) {
+  } else if (error instanceof Error && error.message) {
     const detail = error.message.match(/^HTTP \d+[^:]*: (.+)$/);
-    return detail?.[1] ?? error.message;
+    errorMessage = detail?.[1] ?? error.message;
   }
 
-  return "Failed to analyze the app. Please check the URL and try again.";
+  // Map technical errors to friendly messages
+  if (errorMessage.includes("ERROR_BLOCKED_SITE")) {
+    return "This website is blocking our analysis tool. Some large sites like Facebook, Instagram, and Twitter don't allow automated testing. Try checking your own app URL or a smaller website instead.";
+  }
+
+  if (
+    errorMessage.includes("timed out") ||
+    errorMessage.includes("TimeoutError") ||
+    errorMessage.includes("timeout")
+  ) {
+    return "The analysis took too long (over 60 seconds). The website may be very slow or blocking requests. Please try again or test a different URL.";
+  }
+
+  if (
+    errorMessage.includes("Could not reach") ||
+    errorMessage.includes("unreachable") ||
+    errorMessage.includes("ENOTFOUND") ||
+    errorMessage.includes("ECONNREFUSED")
+  ) {
+    return "We couldn't reach this website. Please check that the URL is correct and the site is online, then try again.";
+  }
+
+  if (
+    errorMessage.includes("Invalid URL") ||
+    errorMessage.includes("must use http or https")
+  ) {
+    return "Please enter a valid website URL starting with http:// or https://.";
+  }
+
+  if (errorMessage.includes("quota exceeded") || errorMessage.includes("429")) {
+    return "We're analyzing too many sites at once. Please wait a moment and try again.";
+  }
+
+  if (errorMessage.includes("access denied") || errorMessage.includes("403")) {
+    return "We don't have permission to analyze this site right now. This is a temporary issue — please try again in a moment.";
+  }
+
+  if (errorMessage.includes("invalid response") || errorMessage.includes("incomplete results")) {
+    return "We received incomplete data from the analysis tool. Please try again.";
+  }
+
+  return errorMessage || "Failed to analyze the app. Please check the URL and try again.";
 }
 
 function AppReady() {
@@ -237,13 +279,23 @@ function AppReady() {
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="flex items-start gap-3 text-destructive bg-destructive/10 px-4 py-3 rounded-lg border border-destructive/20 max-w-md text-left"
+                className="flex flex-col gap-3 max-w-md text-left"
                 data-testid="error-message"
               >
-                <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                <p className="text-sm">
-                  {getAnalyzeErrorMessage(analyzeApp.error)}
-                </p>
+                <div className="flex items-start gap-3 text-destructive bg-destructive/10 px-4 py-3 rounded-lg border border-destructive/20">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                  <p className="text-sm">
+                    {getAnalyzeErrorMessage(analyzeApp.error)}
+                  </p>
+                </div>
+                <button
+                  onClick={handleReset}
+                  className="inline-flex items-center gap-2 text-xs px-4 py-2.5 rounded-md border border-border bg-background hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground font-medium"
+                  data-testid="button-try-another"
+                >
+                  <RotateCw className="w-3.5 h-3.5" />
+                  Try Another URL
+                </button>
               </motion.div>
             )}
           </motion.div>
