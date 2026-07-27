@@ -623,6 +623,7 @@ function AppReady() {
             </div>
           </motion.div>
         )}
+        </div>
       </div>
 
       {/* Auth Dialog */}
