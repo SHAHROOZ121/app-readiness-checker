@@ -4,6 +4,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAnalyzeApp, type ErrorType } from "@workspace/api-client-react";
+import { scanCacheQueries, supabase } from "@/lib/supabase";
+import { AuthProvider, useAuth } from "@/contexts/auth-context";
+import { AuthDialog } from "@/components/auth-dialog";
+import { signOut } from "@/lib/auth";
 import { motion } from "framer-motion";
 import {
   Loader2,
@@ -17,8 +21,12 @@ import {
   RotateCw,
   Eye,
   EyeOff,
+  LogOut,
+  History,
+  User,
 } from "lucide-react";
 import NotFound from "@/pages/not-found";
+import ScanHistory from "@/pages/scan-history";
 
 const queryClient = new QueryClient();
 
@@ -133,12 +141,14 @@ function getAnalyzeErrorMessage(error: unknown): string {
 }
 
 function AppReady() {
+  const { user } = useAuth();
   const [url, setUrl] = useState("");
   const [state, setState] = useState<"landing" | "loading" | "results">("landing");
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [expandedPromptIdx, setExpandedPromptIdx] = useState<number | null>(null);
   const [messageIdx, setMessageIdx] = useState(0);
   const [progress, setProgress] = useState(0);
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
   const expandedPromptRef = useRef<HTMLDivElement>(null);
 
   const messages = [
@@ -195,6 +205,23 @@ function AppReady() {
     }
   }, [expandedPromptIdx]);
 
+  // Save scan results to database when analysis completes
+  useEffect(() => {
+    if (state === "results" && analyzeApp.data) {
+      scanCacheQueries.insertScan({
+        url: analyzeApp.data.url,
+        user_id: user?.id || null,
+        results_json: {
+          overallPercentage: analyzeApp.data.overallPercentage,
+          categories: analyzeApp.data.categories,
+          topFixes: analyzeApp.data.topFixes,
+        },
+      }).catch((err) => {
+        console.error("Failed to save scan to database:", err);
+      });
+    }
+  }, [state, analyzeApp.data, user?.id]);
+
   const handleCheck = (e: React.FormEvent) => {
     e.preventDefault();
     if (!url) return;
@@ -238,8 +265,51 @@ function AppReady() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-background flex flex-col items-center justify-center p-4 selection:bg-primary selection:text-primary-foreground font-sans">
-      <div className="w-full max-w-2xl">
+    <div className="min-h-screen w-full bg-background flex flex-col selection:bg-primary selection:text-primary-foreground font-sans">
+      {/* Header */}
+      <header className="w-full border-b border-border bg-background/95 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="text-lg font-bold text-primary">AppReady</div>
+          <nav className="flex items-center gap-4">
+            {user && (
+              <>
+                <Link href="/scan-history">
+                  <a className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    <History className="w-4 h-4" />
+                    History
+                  </a>
+                </Link>
+                <div className="flex items-center gap-2 text-sm">
+                  <User className="w-4 h-4 text-primary" />
+                  <span className="text-muted-foreground">{user.email}</span>
+                </div>
+                <button
+                  onClick={async () => {
+                    await signOut();
+                    window.location.reload();
+                  }}
+                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Sign Out
+                </button>
+              </>
+            )}
+            {!user && (
+              <button
+                onClick={() => setShowAuthDialog(true)}
+                className="text-sm bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
+              >
+                Sign In / Sign Up
+              </button>
+            )}
+          </nav>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <div className="flex-1 w-full flex flex-col items-center justify-center p-4">
+        <div className="w-full max-w-2xl">
 
         {state === "landing" && (
           <motion.div
@@ -554,6 +624,9 @@ function AppReady() {
           </motion.div>
         )}
       </div>
+
+      {/* Auth Dialog */}
+      {showAuthDialog && <AuthDialog onClose={() => setShowAuthDialog(false)} />}
     </div>
   );
 }
@@ -562,6 +635,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={AppReady} />
+      <Route path="/scan-history" component={ScanHistory} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -569,14 +643,16 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
-        </WouterRouter>
-        <Toaster />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <AuthProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <Router />
+          </WouterRouter>
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </AuthProvider>
   );
 }
 
