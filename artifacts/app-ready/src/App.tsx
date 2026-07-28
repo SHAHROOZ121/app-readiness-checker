@@ -524,70 +524,17 @@ function AppReady() {
                         <span>{fix.description}</span>
                       </div>
                       <div className="pl-6 flex flex-col gap-3">
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => {
-                              navigator.clipboard.writeText(fix.prompt);
-                              setCopiedIdx(idx);
-                              setTimeout(() => setCopiedIdx(null), 2000);
-                            }}
-                            className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-border bg-background hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
-                            data-testid={`button-copy-prompt-${idx}`}
-                          >
-                            {copiedIdx === idx ? (
-                              <>
-                                <CheckCircle2 className="w-3 h-3 text-green-500" />
-                                <span className="text-green-500 font-medium">Copied!</span>
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="w-3 h-3" />
-                                Copy fix prompt
-                              </>
-                            )}
-                          </button>
-                          <button
-                            onClick={() => {
-                              if (expandedPromptIdx === idx) {
-                                setExpandedPromptIdx(null);
-                              } else {
-                                setExpandedPromptIdx(idx);
-                              }
-                            }}
-                            className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-border bg-background hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
-                            data-testid={`button-preview-prompt-${idx}`}
-                          >
-                            {expandedPromptIdx === idx ? (
-                              <>
-                                <EyeOff className="w-3 h-3" />
-                                Hide Prompt
-                              </>
-                            ) : (
-                              <>
-                                <Eye className="w-3 h-3" />
-                                Preview Prompt
-                              </>
-                            )}
-                          </button>
-                        </div>
-                        {expandedPromptIdx === idx && (
-                          <div
-                            ref={expandedPromptRef}
-                            className="bg-muted rounded-md border border-border overflow-hidden"
-                            data-testid={`prompt-preview-${idx}`}
-                          >
-                            <div className="text-muted-foreground font-mono text-xs p-3 whitespace-pre-wrap break-words">
-                              {fix.prompt}
-                            </div>
-                            <div className="flex justify-end px-3 py-2 border-t border-border bg-muted/50">
+                        {user ? (
+                          <>
+                            <div className="flex gap-2">
                               <button
                                 onClick={() => {
                                   navigator.clipboard.writeText(fix.prompt);
                                   setCopiedIdx(idx);
                                   setTimeout(() => setCopiedIdx(null), 2000);
                                 }}
-                                className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded border border-border/50 bg-background hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
-                                data-testid={`button-copy-prompt-in-preview-${idx}`}
+                                className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-border bg-background hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
+                                data-testid={`button-copy-prompt-${idx}`}
                               >
                                 {copiedIdx === idx ? (
                                   <>
@@ -597,12 +544,77 @@ function AppReady() {
                                 ) : (
                                   <>
                                     <Copy className="w-3 h-3" />
-                                    Copy Prompt
+                                    Copy fix prompt
+                                  </>
+                                )}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (expandedPromptIdx === idx) {
+                                    setExpandedPromptIdx(null);
+                                  } else {
+                                    setExpandedPromptIdx(idx);
+                                  }
+                                }}
+                                className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-border bg-background hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
+                                data-testid={`button-preview-prompt-${idx}`}
+                              >
+                                {expandedPromptIdx === idx ? (
+                                  <>
+                                    <EyeOff className="w-3 h-3" />
+                                    Hide Prompt
+                                  </>
+                                ) : (
+                                  <>
+                                    <Eye className="w-3 h-3" />
+                                    Preview Prompt
                                   </>
                                 )}
                               </button>
                             </div>
-                          </div>
+                            {expandedPromptIdx === idx && (
+                              <div
+                                ref={expandedPromptRef}
+                                className="bg-muted rounded-md border border-border overflow-hidden"
+                                data-testid={`prompt-preview-${idx}`}
+                              >
+                                <div className="text-muted-foreground font-mono text-xs p-3 whitespace-pre-wrap break-words">
+                                  {fix.prompt}
+                                </div>
+                                <div className="flex justify-end px-3 py-2 border-t border-border bg-muted/50">
+                                  <button
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(fix.prompt);
+                                      setCopiedIdx(idx);
+                                      setTimeout(() => setCopiedIdx(null), 2000);
+                                    }}
+                                    className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded border border-border/50 bg-background hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
+                                    data-testid={`button-copy-prompt-in-preview-${idx}`}
+                                  >
+                                    {copiedIdx === idx ? (
+                                      <>
+                                        <CheckCircle2 className="w-3 h-3 text-green-500" />
+                                        <span className="text-green-500 font-medium">Copied!</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Copy className="w-3 h-3" />
+                                        Copy Prompt
+                                      </>
+                                    )}
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => setShowAuthDialog(true)}
+                            className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-primary bg-primary/10 hover:bg-primary/20 transition-colors text-primary font-semibold"
+                            data-testid={`button-signin-for-prompts-${idx}`}
+                          >
+                            Sign In to See Detailed Instructions
+                          </button>
                         )}
                       </div>
                     </li>
