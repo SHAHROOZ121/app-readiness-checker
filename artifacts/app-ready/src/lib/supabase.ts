@@ -17,7 +17,12 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 export type Profile = {
   id: string;
   email: string;
-  plan_type: "free" | "pro" | "enterprise";
+  subscription_tier: "free" | "pro" | "premium";
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  billing_cycle: "monthly" | "annual" | null;
+  subscription_status: "active" | "cancelled" | "past_due" | null;
+  current_period_end: string | null;
   created_at: string;
 };
 

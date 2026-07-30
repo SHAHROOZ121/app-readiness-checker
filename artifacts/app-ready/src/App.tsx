@@ -27,6 +27,8 @@ import {
 } from "lucide-react";
 import NotFound from "@/pages/not-found";
 import ScanHistory from "@/pages/scan-history";
+import Pricing from "@/pages/pricing";
+import CheckoutSuccess from "@/pages/checkout-success";
 
 const queryClient = new QueryClient();
 
@@ -648,6 +650,8 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={AppReady} />
+      <Route path="/pricing" component={Pricing} />
+      <Route path="/checkout-success" component={CheckoutSuccess} />
       <Route path="/scan-history" component={ScanHistory} />
       <Route component={NotFound} />
     </Switch>
