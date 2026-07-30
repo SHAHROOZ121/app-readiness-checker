@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import NotFound from "@/pages/not-found";
 import ScanHistory from "@/pages/scan-history";
+import ScanComparison from "@/pages/scan-comparison";
 import Pricing from "@/pages/pricing";
 import CheckoutSuccess from "@/pages/checkout-success";
 
@@ -707,6 +708,7 @@ function Router() {
       <Route path="/pricing" component={Pricing} />
       <Route path="/checkout-success" component={CheckoutSuccess} />
       <Route path="/scan-history" component={ScanHistory} />
+      <Route path="/scan-comparison" component={ScanComparison} />
       <Route component={NotFound} />
     </Switch>
   );
