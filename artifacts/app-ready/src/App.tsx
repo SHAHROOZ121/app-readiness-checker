@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAnalyzeApp, type ErrorType } from "@workspace/api-client-react";
 import { scanCacheQueries, supabase } from "@/lib/supabase";
+import { checkRateLimit } from "@/lib/rate-limiting";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { AuthDialog } from "@/components/auth-dialog";
 import { signOut } from "@/lib/auth";
@@ -151,6 +152,7 @@ function AppReady() {
   const [messageIdx, setMessageIdx] = useState(0);
   const [progress, setProgress] = useState(0);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const [rateLimitInfo, setRateLimitInfo] = useState<{ remaining: number; limit: number } | null>(null);
   const expandedPromptRef = useRef<HTMLDivElement>(null);
 
   const messages = [
@@ -224,9 +226,26 @@ function AppReady() {
     }
   }, [state, analyzeApp.data, user?.id]);
 
-  const handleCheck = (e: React.FormEvent) => {
+  const handleCheck = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!url) return;
+
+    // Check rate limit
+    const rateLimitResult = await checkRateLimit(user?.id || null);
+    setRateLimitInfo({
+      remaining: rateLimitResult.remaining,
+      limit: rateLimitResult.limit,
+    });
+
+    if (!rateLimitResult.allowed) {
+      // Show error message
+      setState("landing");
+      analyzeApp.setError({
+        data: { error: rateLimitResult.message || "Scan limit exceeded. Please upgrade your plan." },
+      } as any);
+      return;
+    }
+
     setState("loading");
     analyzeApp.mutate(
       { data: { url } },
@@ -240,6 +259,20 @@ function AppReady() {
       }
     );
   };
+
+  // Load rate limit info on mount and when user changes
+  useEffect(() => {
+    const loadRateLimit = async () => {
+      const result = await checkRateLimit(user?.id || null);
+      if (result.limit !== -1) {
+        setRateLimitInfo({
+          remaining: result.remaining,
+          limit: result.limit,
+        });
+      }
+    };
+    loadRateLimit();
+  }, [user?.id]);
 
   const handleReset = () => {
     setUrl("");
@@ -359,6 +392,19 @@ function AppReady() {
                 Check My App <ArrowRight className="w-4 h-4" />
               </button>
             </form>
+
+            {rateLimitInfo && rateLimitInfo.limit !== -1 && (
+              <div className="text-sm text-muted-foreground">
+                <span>
+                  {rateLimitInfo.remaining} of {rateLimitInfo.limit} scans remaining today
+                </span>
+                {rateLimitInfo.remaining <= 1 && rateLimitInfo.remaining > 0 && (
+                  <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-1">
+                    Need more? Upgrade to Pro or Premium for unlimited scans.
+                  </p>
+                )}
+              </div>
+            )}
 
             {analyzeApp.isError && (
               <motion.div
