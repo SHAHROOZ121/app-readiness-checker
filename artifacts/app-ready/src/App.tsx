@@ -230,8 +230,14 @@ function AppReady() {
     e.preventDefault();
     if (!url) return;
 
+    // Require user to be signed in
+    if (!user) {
+      setShowAuthDialog(true);
+      return;
+    }
+
     // Check rate limit
-    const rateLimitResult = await checkRateLimit(user?.id || null);
+    const rateLimitResult = await checkRateLimit(user.id);
     setRateLimitInfo({
       remaining: rateLimitResult.remaining,
       limit: rateLimitResult.limit,
@@ -260,10 +266,12 @@ function AppReady() {
     );
   };
 
-  // Load rate limit info on mount and when user changes
+  // Load rate limit info when user signs in
   useEffect(() => {
+    if (!user?.id) return;
+
     const loadRateLimit = async () => {
-      const result = await checkRateLimit(user?.id || null);
+      const result = await checkRateLimit(user.id);
       if (result.limit !== -1) {
         setRateLimitInfo({
           remaining: result.remaining,

@@ -16,12 +16,7 @@ interface RateLimitCheckResult {
   message?: string;
 }
 
-export async function checkRateLimit(userId: string | null): Promise<RateLimitCheckResult> {
-  // Anonymous users are treated as free tier
-  if (!userId) {
-    return checkRateLimitForTier("free");
-  }
-
+export async function checkRateLimit(userId: string): Promise<RateLimitCheckResult> {
   try {
     // Get user's profile with subscription tier
     const { data: profile, error } = await supabase
