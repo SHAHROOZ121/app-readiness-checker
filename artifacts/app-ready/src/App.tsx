@@ -31,6 +31,7 @@ import ScanHistory from "@/pages/scan-history";
 import ScanComparison from "@/pages/scan-comparison";
 import Pricing from "@/pages/pricing";
 import CheckoutSuccess from "@/pages/checkout-success";
+import AuthCallback from "@/pages/auth-callback";
 
 const queryClient = new QueryClient();
 
@@ -709,6 +710,7 @@ function Router() {
       <Route path="/checkout-success" component={CheckoutSuccess} />
       <Route path="/scan-history" component={ScanHistory} />
       <Route path="/scan-comparison" component={ScanComparison} />
+      <Route path="/auth/callback" component={AuthCallback} />
       <Route component={NotFound} />
     </Switch>
   );
