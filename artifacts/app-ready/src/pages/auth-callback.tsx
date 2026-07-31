@@ -1,36 +1,18 @@
 import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { Loader2 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 
 export default function AuthCallback() {
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    const handleCallback = async () => {
-      try {
-        // Exchange the code for a session
-        const { data, error } = await supabase.auth.exchangeCodeForSession(
-          new URL(window.location.href).searchParams.get("code") || ""
-        );
+    // Supabase automatically sets the session when redirected from email link
+    // Just wait a moment for the auth state to update, then redirect
+    const timer = setTimeout(() => {
+      setLocation("/");
+    }, 1000);
 
-        if (error) {
-          console.error("Auth error:", error);
-          setLocation("/");
-          return;
-        }
-
-        if (data.session) {
-          // Session is now set, redirect to home
-          setLocation("/");
-        }
-      } catch (err) {
-        console.error("Callback error:", err);
-        setLocation("/");
-      }
-    };
-
-    handleCallback();
+    return () => clearTimeout(timer);
   }, [setLocation]);
 
   return (
