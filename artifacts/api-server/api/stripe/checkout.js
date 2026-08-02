@@ -1,6 +1,6 @@
-import StripeLib from "stripe";
+const Stripe = require("stripe");
 
-const stripe = new StripeLib.default(process.env.STRIPE_SECRET_KEY);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 const STRIPE_PRICE_IDS = {
   pro_monthly: process.env.VITE_STRIPE_PRICE_PRO_MONTHLY,
@@ -9,7 +9,7 @@ const STRIPE_PRICE_IDS = {
   premium_annual: process.env.VITE_STRIPE_PRICE_PREMIUM_ANNUAL,
 };
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -61,7 +61,7 @@ export default async function handler(req, res) {
       mode: "subscription",
       success_url: `${baseUrl}/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/pricing`,
-      customer_email: undefined, // Will be set from user context if available
+      customer_email: undefined,
       metadata: {
         userId,
         tier,
@@ -76,4 +76,4 @@ export default async function handler(req, res) {
       error: error instanceof Error ? error.message : "Checkout failed",
     });
   }
-}
+};
