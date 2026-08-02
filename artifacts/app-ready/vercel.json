@@ -2,6 +2,11 @@
   "installCommand": "cd ../.. && pnpm install --no-frozen-lockfile",
   "buildCommand": "cd ../.. && VERCEL_OUTPUT_DIR=artifacts/app-ready/public pnpm run vercel-build",
   "outputDirectory": "public",
+  "functions": {
+    "api/stripe/checkout.js": {
+      "maxDuration": 30
+    }
+  },
   "rewrites": [
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
