@@ -319,6 +319,11 @@ function AppReady() {
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="text-lg font-bold text-primary">AppReady</div>
           <nav className="flex items-center gap-4">
+            <Link href="/pricing">
+              <a className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Pricing
+              </a>
+            </Link>
             {user && (
               <>
                 <Link href="/scan-history">
@@ -411,9 +416,24 @@ function AppReady() {
                 <span>
                   {rateLimitInfo.remaining} of {rateLimitInfo.limit} scans remaining today
                 </span>
+                {rateLimitInfo.remaining <= 0 && (
+                  <div className="text-sm mt-2 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                    <p className="text-yellow-600 dark:text-yellow-500 font-semibold mb-2">
+                      🎯 Free limit reached!
+                    </p>
+                    <p className="text-xs text-yellow-700 dark:text-yellow-400 mb-3">
+                      You've used all 3 free scans today. Upgrade to Pro for 30 scans/day or Premium for unlimited scans.
+                    </p>
+                    <Link href="/pricing">
+                      <a className="text-xs font-semibold text-yellow-600 dark:text-yellow-500 hover:underline">
+                        View Pricing Plans →
+                      </a>
+                    </Link>
+                  </div>
+                )}
                 {rateLimitInfo.remaining <= 1 && rateLimitInfo.remaining > 0 && (
                   <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-1">
-                    Need more? Upgrade to Pro or Premium for unlimited scans.
+                    Need more? <Link href="/pricing"><a className="underline hover:no-underline">Upgrade to Pro or Premium</a></Link> for unlimited scans.
                   </p>
                 )}
               </div>
