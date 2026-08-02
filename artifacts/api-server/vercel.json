@@ -6,6 +6,9 @@
     "api/analyze.js": {
       "maxDuration": 60,
       "includeFiles": "../../lib/integrations-pagespeed/**"
+    },
+    "api/stripe/checkout.js": {
+      "maxDuration": 30
     }
   },
   "rewrites": [
