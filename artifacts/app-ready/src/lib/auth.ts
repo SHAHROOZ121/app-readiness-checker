@@ -16,6 +16,19 @@ export async function signUp(email: string, password: string) {
   });
 
   if (error) throw error;
+
+  // Create a profile record for the new user
+  if (data.user?.id) {
+    await supabase.from("profiles").insert([
+      {
+        id: data.user.id,
+        email: email,
+        subscription_tier: "free",
+        created_at: new Date().toISOString(),
+      },
+    ]);
+  }
+
   return data;
 }
 
