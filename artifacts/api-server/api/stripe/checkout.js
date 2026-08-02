@@ -1,6 +1,6 @@
-import Stripe from "stripe";
+import StripeLib from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const stripe = new StripeLib.default(process.env.STRIPE_SECRET_KEY);
 
 const STRIPE_PRICE_IDS = {
   pro_monthly: process.env.VITE_STRIPE_PRICE_PRO_MONTHLY,
