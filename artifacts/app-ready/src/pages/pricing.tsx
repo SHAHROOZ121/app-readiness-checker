@@ -68,7 +68,7 @@ export default function Pricing() {
 
     setLoading(true);
     try {
-      const response = await fetch("/api/stripe/checkout", {
+      const response = await fetch("https://app-readiness-checker-api-server.vercel.app/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
