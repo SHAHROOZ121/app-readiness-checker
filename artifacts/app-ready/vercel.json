@@ -2,14 +2,7 @@
   "installCommand": "cd ../.. && pnpm install --no-frozen-lockfile",
   "buildCommand": "cd ../.. && VERCEL_OUTPUT_DIR=artifacts/app-ready/public pnpm run vercel-build",
   "outputDirectory": "public",
-  "functions": {
-    "api/analyze.js": {
-      "maxDuration": 60,
-      "includeFiles": "../../lib/integrations-pagespeed/**"
-    }
-  },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }
