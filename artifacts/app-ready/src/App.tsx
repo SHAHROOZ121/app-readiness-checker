@@ -3,7 +3,10 @@ import { Switch, Route, Router as WouterRouter, Link } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useAnalyzeApp, type ErrorType } from "@workspace/api-client-react";
+import { useAnalyzeApp, type ErrorType, setBaseUrl } from "@workspace/api-client-react";
+
+// Point frontend to the API server
+setBaseUrl("https://app-readiness-checker-api-server.vercel.app");
 import { scanCacheQueries, supabase } from "@/lib/supabase";
 import { checkRateLimit } from "@/lib/rate-limiting";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
