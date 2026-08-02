@@ -1,14 +1,19 @@
 module.exports = async function handler(req, res) {
+  // Set CORS headers FIRST before any response
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader("Access-Control-Max-Age", "86400");
 
+  // Handle preflight requests
   if (req.method === "OPTIONS") {
-    return res.status(200).end();
+    res.status(200).end();
+    return;
   }
 
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
+    res.status(405).json({ error: "Method not allowed" });
+    return;
   }
 
   try {
@@ -19,21 +24,25 @@ module.exports = async function handler(req, res) {
     const pricePremiumAnnual = process.env.VITE_STRIPE_PRICE_PREMIUM_ANNUAL;
 
     if (!secretKey) {
-      return res.status(500).json({ error: "STRIPE_SECRET_KEY not configured" });
+      res.status(500).json({ error: "STRIPE_SECRET_KEY not configured" });
+      return;
     }
 
     const { tier, billingPeriod, userId } = req.body;
 
     if (!tier || !billingPeriod || !userId) {
-      return res.status(400).json({ error: "Missing required fields" });
+      res.status(400).json({ error: "Missing required fields" });
+      return;
     }
 
     if (!["pro", "premium"].includes(tier)) {
-      return res.status(400).json({ error: "Invalid tier" });
+      res.status(400).json({ error: "Invalid tier" });
+      return;
     }
 
     if (!["monthly", "annual"].includes(billingPeriod)) {
-      return res.status(400).json({ error: "Invalid billing period" });
+      res.status(400).json({ error: "Invalid billing period" });
+      return;
     }
 
     const STRIPE_PRICE_IDS = {
@@ -47,14 +56,15 @@ module.exports = async function handler(req, res) {
     const priceId = STRIPE_PRICE_IDS[priceKey];
 
     if (!priceId) {
-      return res.status(400).json({ error: `Price ID not found for ${priceKey}` });
+      res.status(400).json({ error: `Price ID not found for ${priceKey}` });
+      return;
     }
 
     const baseUrl = process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}`
       : "http://localhost:3000";
 
-    // Call Stripe API directly via HTTP instead of using SDK
+    // Call Stripe API directly
     const stripeResponse = await fetch("https://api.stripe.com/v1/checkout/sessions", {
       method: "POST",
       headers: {
@@ -77,15 +87,16 @@ module.exports = async function handler(req, res) {
     const session = await stripeResponse.json();
 
     if (!stripeResponse.ok) {
-      return res.status(400).json({
+      res.status(400).json({
         error: session.error?.message || "Stripe API error",
       });
+      return;
     }
 
-    return res.status(200).json({ sessionId: session.id });
+    res.status(200).json({ sessionId: session.id });
   } catch (error) {
     console.error("Checkout error:", error);
-    return res.status(500).json({
+    res.status(500).json({
       error: error.message || "Checkout failed",
     });
   }
