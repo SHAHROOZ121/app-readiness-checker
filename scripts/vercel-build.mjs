@@ -21,4 +21,14 @@ rmSync(outputDir, { recursive: true, force: true });
 mkdirSync(outputDir, { recursive: true });
 cpSync(src, outputDir, { recursive: true });
 
+// Copy API functions
+const apiSrc = resolve(root, "artifacts/app-ready/api");
+const apiDest = resolve(outputDir, "api");
+try {
+  cpSync(apiSrc, apiDest, { recursive: true });
+  console.log("API functions copied.");
+} catch (err) {
+  console.log("No API folder to copy.");
+}
+
 console.log("Vercel build complete.");
