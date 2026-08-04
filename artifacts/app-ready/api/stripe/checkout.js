@@ -1,63 +1,55 @@
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method === "OPTIONS") {
-    res.status(200).end();
-    return;
+    return res.status(200).end();
   }
 
   if (req.method !== "POST") {
-    res.status(405).json({ error: "Method not allowed" });
-    return;
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+  const priceProMonthly = process.env.VITE_STRIPE_PRICE_PRO_MONTHLY;
+  const priceProAnnual = process.env.VITE_STRIPE_PRICE_PRO_ANNUAL;
+  const pricePremiumMonthly = process.env.VITE_STRIPE_PRICE_PREMIUM_MONTHLY;
+  const pricePremiumAnnual = process.env.VITE_STRIPE_PRICE_PREMIUM_ANNUAL;
+
+  if (!secretKey) {
+    return res.status(500).json({ error: "STRIPE_SECRET_KEY not configured" });
+  }
+
+  const { tier, billingPeriod, userId } = req.body;
+
+  if (!tier || !billingPeriod || !userId) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  if (!["pro", "premium"].includes(tier)) {
+    return res.status(400).json({ error: "Invalid tier" });
+  }
+
+  if (!["monthly", "annual"].includes(billingPeriod)) {
+    return res.status(400).json({ error: "Invalid billing period" });
+  }
+
+  const STRIPE_PRICE_IDS = {
+    pro_monthly: priceProMonthly,
+    pro_annual: priceProAnnual,
+    premium_monthly: pricePremiumMonthly,
+    premium_annual: pricePremiumAnnual,
+  };
+
+  const priceKey = `${tier}_${billingPeriod}`;
+  const priceId = STRIPE_PRICE_IDS[priceKey];
+
+  if (!priceId) {
+    return res.status(400).json({ error: `Price ID not found for ${priceKey}` });
+  }
+
+  const baseUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : "http://localhost:3000";
+
   try {
-    const secretKey = process.env.STRIPE_SECRET_KEY;
-    const priceProMonthly = process.env.VITE_STRIPE_PRICE_PRO_MONTHLY;
-    const priceProAnnual = process.env.VITE_STRIPE_PRICE_PRO_ANNUAL;
-    const pricePremiumMonthly = process.env.VITE_STRIPE_PRICE_PREMIUM_MONTHLY;
-    const pricePremiumAnnual = process.env.VITE_STRIPE_PRICE_PREMIUM_ANNUAL;
-
-    if (!secretKey) {
-      res.status(500).json({ error: "STRIPE_SECRET_KEY not configured" });
-      return;
-    }
-
-    const { tier, billingPeriod, userId } = req.body;
-
-    if (!tier || !billingPeriod || !userId) {
-      res.status(400).json({ error: "Missing required fields" });
-      return;
-    }
-
-    if (!["pro", "premium"].includes(tier)) {
-      res.status(400).json({ error: "Invalid tier" });
-      return;
-    }
-
-    if (!["monthly", "annual"].includes(billingPeriod)) {
-      res.status(400).json({ error: "Invalid billing period" });
-      return;
-    }
-
-    const STRIPE_PRICE_IDS = {
-      pro_monthly: priceProMonthly,
-      pro_annual: priceProAnnual,
-      premium_monthly: pricePremiumMonthly,
-      premium_annual: pricePremiumAnnual,
-    };
-
-    const priceKey = `${tier}_${billingPeriod}`;
-    const priceId = STRIPE_PRICE_IDS[priceKey];
-
-    if (!priceId) {
-      res.status(400).json({ error: `Price ID not found for ${priceKey}` });
-      return;
-    }
-
-    const baseUrl = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000";
-
-    // Direct HTTP call to Stripe API - no SDK dependency
     const stripeResponse = await fetch("https://api.stripe.com/v1/checkout/sessions", {
       method: "POST",
       headers: {
@@ -80,17 +72,16 @@ module.exports = async function handler(req, res) {
     const session = await stripeResponse.json();
 
     if (!stripeResponse.ok) {
-      res.status(400).json({
+      return res.status(400).json({
         error: session.error?.message || "Stripe API error",
       });
-      return;
     }
 
-    res.status(200).json({ sessionId: session.id });
+    return res.status(200).json({ sessionId: session.id });
   } catch (error) {
     console.error("Checkout error:", error);
-    res.status(500).json({
+    return res.status(500).json({
       error: error.message || "Checkout failed",
     });
   }
-};
+}
