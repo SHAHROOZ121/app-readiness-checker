@@ -28,20 +28,19 @@ async function updateUserSubscription(event) {
     return;
   }
 
+  // Support both STRIPE_ and VITE_STRIPE_ prefixed environment variables
+  const priceIdProMonthly = process.env.STRIPE_PRICE_PRO_MONTHLY || process.env.VITE_STRIPE_PRICE_PRO_MONTHLY;
+  const priceIdProAnnual = process.env.STRIPE_PRICE_PRO_ANNUAL || process.env.VITE_STRIPE_PRICE_PRO_ANNUAL;
+  const priceIdPremiumMonthly = process.env.STRIPE_PRICE_PREMIUM_MONTHLY || process.env.VITE_STRIPE_PRICE_PREMIUM_MONTHLY;
+  const priceIdPremiumAnnual = process.env.STRIPE_PRICE_PREMIUM_ANNUAL || process.env.VITE_STRIPE_PRICE_PREMIUM_ANNUAL;
+
   // Determine tier from price ID
   let tier = "free";
   if (subscription.items.data[0]) {
     const priceId = subscription.items.data[0].price.id;
-    // You can map price IDs to tiers here
-    if (
-      priceId === process.env.STRIPE_PRICE_PRO_MONTHLY ||
-      priceId === process.env.STRIPE_PRICE_PRO_ANNUAL
-    ) {
+    if (priceId === priceIdProMonthly || priceId === priceIdProAnnual) {
       tier = "pro";
-    } else if (
-      priceId === process.env.STRIPE_PRICE_PREMIUM_MONTHLY ||
-      priceId === process.env.STRIPE_PRICE_PREMIUM_ANNUAL
-    ) {
+    } else if (priceId === priceIdPremiumMonthly || priceId === priceIdPremiumAnnual) {
       tier = "premium";
     }
   }
