@@ -68,8 +68,8 @@ module.exports = async function handler(req, res) {
     const stripeResponse = await fetch("https://api.stripe.com/v1/checkout/sessions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${secretKey}`,
-        "Content-Type": "application/x-www-form-urlencoded",
+        const auth = Buffer.from(secretKey + ':').toString('base64');
+Authorization: `Basic ${auth}`,        "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({
         "payment_method_types[0]": "card",
