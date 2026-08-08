@@ -48,10 +48,17 @@ const stripeResponse = await fetch("https://api.stripe.com/v1/checkout/sessions"
 
     const data = await stripeResponse.json();
 
+    // Log for debugging
+    console.log("Stripe API request - Price ID:", priceId);
+    console.log("Stripe response status:", stripeResponse.status);
+    console.log("Stripe response data:", JSON.stringify(data));
+
     if (!stripeResponse.ok) {
+      console.error("Stripe error:", data.error);
       return res.status(400).json({ error: data.error?.message || "Stripe error" });
     }
 
+    console.log("Session created successfully:", data.id);
     return res.json({ sessionId: data.id });
   } catch (error) {
     return res.status(500).json({ error: error.message || "Checkout failed" });

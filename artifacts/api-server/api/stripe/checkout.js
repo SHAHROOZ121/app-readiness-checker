@@ -64,12 +64,15 @@ module.exports = async function handler(req, res) {
       ? `https://${process.env.VERCEL_URL}`
       : "http://localhost:3000";
 
+    // Create auth header
+    const auth = Buffer.from(secretKey + ':').toString('base64');
+
     // Call Stripe API directly
     const stripeResponse = await fetch("https://api.stripe.com/v1/checkout/sessions", {
       method: "POST",
       headers: {
-        const auth = Buffer.from(secretKey + ':').toString('base64');
-Authorization: `Basic ${auth}`,        "Content-Type": "application/x-www-form-urlencoded",
+        "Authorization": `Basic ${auth}`,
+        "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({
         "payment_method_types[0]": "card",
@@ -86,13 +89,20 @@ Authorization: `Basic ${auth}`,        "Content-Type": "application/x-www-form-u
 
     const session = await stripeResponse.json();
 
+    // Log for debugging
+    console.log("Stripe API request - Price ID:", priceId);
+    console.log("Stripe response status:", stripeResponse.status);
+    console.log("Stripe response data:", JSON.stringify(session));
+
     if (!stripeResponse.ok) {
+      console.error("Stripe error:", session.error);
       res.status(400).json({
         error: session.error?.message || "Stripe API error",
       });
       return;
     }
 
+    console.log("Session created successfully:", session.id);
     res.status(200).json({ sessionId: session.id });
   } catch (error) {
     console.error("Checkout error:", error);
