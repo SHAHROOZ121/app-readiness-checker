@@ -46,9 +46,9 @@ const stripeResponse = await fetch("https://api.stripe.com/v1/checkout/sessions"
   }).toString(),
 });
 
-    const data = await response.json();
+    const data = await stripeResponse.json();
 
-    if (!response.ok) {
+    if (!stripeResponse.ok) {
       return res.status(400).json({ error: data.error?.message || "Stripe error" });
     }
 
