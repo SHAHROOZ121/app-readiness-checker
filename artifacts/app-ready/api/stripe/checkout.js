@@ -29,7 +29,7 @@ export default async function handler(req, res) {
     const response = await fetch("https://api.stripe.com/v1/checkout/sessions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${secretKey}`,
+        Authorization: `Basic ${Buffer.from(secretKey + ':').toString('base64')}`,
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({
