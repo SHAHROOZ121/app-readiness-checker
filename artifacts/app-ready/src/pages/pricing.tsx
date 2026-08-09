@@ -82,9 +82,14 @@ export default function Pricing() {
         throw new Error("Failed to create checkout session");
       }
 
-      const { sessionId } = await response.json();
-      // Redirect to Stripe Checkout
-      window.location.href = `https://checkout.stripe.com/pay/${sessionId}`;
+      const { url } = await response.json();
+
+      if (!url) {
+        throw new Error("Stripe Checkout URL was not returned");
+      }
+
+      // Redirect to the exact Stripe-hosted Checkout URL
+      window.location.href = url;
     } catch (error) {
       console.error("Checkout error:", error);
       alert("Failed to start checkout. Please try again.");

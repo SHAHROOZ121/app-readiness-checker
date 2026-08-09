@@ -59,7 +59,10 @@ const stripeResponse = await fetch("https://api.stripe.com/v1/checkout/sessions"
     }
 
     console.log("Session created successfully:", data.id);
-    return res.json({ sessionId: data.id });
+    return res.json({
+      sessionId: data.id,
+      url: data.url
+    });
   } catch (error) {
     return res.status(500).json({ error: error.message || "Checkout failed" });
   }

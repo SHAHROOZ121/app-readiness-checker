@@ -103,7 +103,10 @@ module.exports = async function handler(req, res) {
     }
 
     console.log("Session created successfully:", session.id);
-    res.status(200).json({ sessionId: session.id });
+    res.status(200).json({
+      sessionId: session.id,
+      url: session.url
+    });
   } catch (error) {
     console.error("Checkout error:", error);
     res.status(500).json({
