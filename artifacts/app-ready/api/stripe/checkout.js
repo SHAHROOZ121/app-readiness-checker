@@ -43,6 +43,11 @@ const stripeResponse = await fetch("https://api.stripe.com/v1/checkout/sessions"
     "metadata[userId]": userId,
     "metadata[tier]": tier,
     "metadata[billingPeriod]": billingPeriod,
+    // Session metadata does NOT propagate to the Subscription object.
+    // The webhook reads subscription.metadata, so it must be set here too.
+    "subscription_data[metadata][userId]": userId,
+    "subscription_data[metadata][tier]": tier,
+    "subscription_data[metadata][billingPeriod]": billingPeriod,
   }).toString(),
 });
 
