@@ -1,5 +1,11 @@
 import { supabase } from "./supabase";
 
+// Confirmation links must point at a fixed, deployed origin. Using
+// window.location.origin sends preview/localhost users to an origin that
+// cannot complete the confirmation. Override per-environment with VITE_APP_URL.
+const APP_URL =
+  import.meta.env.VITE_APP_URL || "https://app-readiness-checker-app-ready.vercel.app";
+
 export type AuthUser = {
   id: string;
   email: string;
@@ -11,7 +17,7 @@ export async function signUp(email: string, password: string) {
     email,
     password,
     options: {
-      emailRedirectTo: `${window.location.origin}/auth/callback`,
+      emailRedirectTo: `${APP_URL}/auth/callback`,
     },
   });
 
