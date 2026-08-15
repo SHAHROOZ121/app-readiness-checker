@@ -149,7 +149,10 @@ function getAnalyzeErrorMessage(error: unknown): string {
 }
 
 function AppReady() {
-  const { user } = useAuth();
+  const { user, tier } = useAuth();
+  // Full fix prompts are a paid feature. Free (and signed-out) users see the
+  // recommendation text only.
+  const hasPromptAccess = !!user && tier !== "free";
   const [url, setUrl] = useState("");
   const [state, setState] = useState<"landing" | "loading" | "results">("landing");
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
@@ -610,7 +613,7 @@ function AppReady() {
                         <span>{fix.description}</span>
                       </div>
                       <div className="pl-6 flex flex-col gap-3">
-                        {user ? (
+                        {hasPromptAccess ? (
                           <>
                             <div className="flex gap-2">
                               <button
@@ -693,7 +696,7 @@ function AppReady() {
                               </div>
                             )}
                           </>
-                        ) : (
+                        ) : !user ? (
                           <button
                             onClick={() => setShowAuthDialog(true)}
                             className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-primary bg-primary/10 hover:bg-primary/20 transition-colors text-primary font-semibold"
@@ -701,6 +704,15 @@ function AppReady() {
                           >
                             Sign In to See Detailed Instructions
                           </button>
+                        ) : (
+                          <Link href="/pricing">
+                            <a
+                              className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-primary bg-primary/10 hover:bg-primary/20 transition-colors text-primary font-semibold w-fit"
+                              data-testid={`button-upgrade-for-prompts-${idx}`}
+                            >
+                              Upgrade to Pro for Full Instructions
+                            </a>
+                          </Link>
                         )}
                       </div>
                     </li>
