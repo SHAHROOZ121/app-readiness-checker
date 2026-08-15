@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { onAuthStateChange, type AuthUser } from "@/lib/auth";
+import { ensureProfile, onAuthStateChange, type AuthUser } from "@/lib/auth";
 
 type AuthContextType = {
   user: AuthUser | null;
@@ -23,6 +23,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       subscription?.unsubscribe();
     };
   }, []);
+
+  // Email-confirmed users reach their first authenticated session without a
+  // profile row (signUp cannot create one - see ensureProfile). Backfill it
+  // here, on the one path every authenticated session passes through.
+  useEffect(() => {
+    if (!user) return;
+    ensureProfile(user);
+  }, [user?.id]);
 
   return (
     <AuthContext.Provider value={{ user, isLoading }}>

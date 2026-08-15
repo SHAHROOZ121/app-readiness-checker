@@ -158,6 +158,9 @@ function AppReady() {
   const [progress, setProgress] = useState(0);
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [rateLimitInfo, setRateLimitInfo] = useState<{ remaining: number; limit: number } | null>(null);
+  // Client-side errors raised before the mutation runs (e.g. rate limit).
+  // analyzeApp.error is owned by react-query and cannot be set directly.
+  const [localError, setLocalError] = useState<string | null>(null);
   const expandedPromptRef = useRef<HTMLDivElement>(null);
 
   const messages = [
@@ -251,12 +254,13 @@ function AppReady() {
     if (!rateLimitResult.allowed) {
       // Show error message
       setState("landing");
-      analyzeApp.setError({
-        data: { error: rateLimitResult.message || "Scan limit exceeded. Please upgrade your plan." },
-      } as any);
+      setLocalError(
+        rateLimitResult.message || "Scan limit exceeded. Please upgrade your plan."
+      );
       return;
     }
 
+    setLocalError(null);
     setState("loading");
     analyzeApp.mutate(
       { data: { url } },
@@ -290,6 +294,7 @@ function AppReady() {
   const handleReset = () => {
     setUrl("");
     setState("landing");
+    setLocalError(null);
     analyzeApp.reset();
   };
 
@@ -439,7 +444,7 @@ function AppReady() {
               </div>
             )}
 
-            {analyzeApp.isError && (
+            {(analyzeApp.isError || localError) && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -449,7 +454,7 @@ function AppReady() {
                 <div className="flex items-start gap-3 text-destructive bg-destructive/10 px-4 py-3 rounded-lg border border-destructive/20">
                   <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                   <p className="text-sm">
-                    {getAnalyzeErrorMessage(analyzeApp.error)}
+                    {localError ?? getAnalyzeErrorMessage(analyzeApp.error)}
                   </p>
                 </div>
                 <button

@@ -23,19 +23,47 @@ export async function signUp(email: string, password: string) {
 
   if (error) throw error;
 
-  // Create a profile record for the new user
-  if (data.user?.id) {
-    await supabase.from("profiles").insert([
-      {
-        id: data.user.id,
-        email: email,
-        subscription_tier: "free",
-        created_at: new Date().toISOString(),
-      },
-    ]);
+  // NOTE: the profile row is NOT created here. When email confirmation is
+  // enabled, signUp() returns a user but no session, so auth.uid() is null and
+  // the RLS insert policy (auth.uid() = id) rejects the write. The row is
+  // created by ensureProfile() once the user is actually authenticated.
+  return data;
+}
+
+/**
+ * Guarantees a profiles row exists for an authenticated user.
+ *
+ * Runs on every authenticated session, so it must be idempotent: it never
+ * overwrites an existing profile and tolerates a concurrent insert.
+ */
+export async function ensureProfile(user: AuthUser): Promise<void> {
+  // maybeSingle() returns null rather than erroring (406) when no row exists.
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Error checking profile:", error);
+    return;
   }
 
-  return data;
+  if (data) return; // Already exists - leave it untouched.
+
+  const { error: insertError } = await supabase.from("profiles").insert([
+    {
+      id: user.id,
+      email: user.email,
+      plan_type: "free",
+      subscription_tier: "free",
+    },
+  ]);
+
+  // 23505 = unique_violation: another tab/request created it first. Not an error.
+  if (insertError && insertError.code !== "23505") {
+    console.error("Error creating profile:", insertError);
+  }
 }
 
 // Sign in with email and password
