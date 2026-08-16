@@ -3,11 +3,25 @@ import { Switch, Route, Router as WouterRouter, Link } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useAnalyzeApp, type ErrorType, setBaseUrl } from "@workspace/api-client-react";
+import {
+  useAnalyzeApp,
+  type ErrorType,
+  setAuthTokenGetter,
+  setBaseUrl,
+} from "@workspace/api-client-react";
+import { scanCacheQueries, supabase } from "@/lib/supabase";
 
 // Point frontend to the API server
 setBaseUrl("https://app-readiness-checker-api-server.vercel.app");
-import { scanCacheQueries, supabase } from "@/lib/supabase";
+
+// The API server is a different origin, so the Supabase session cookie is not
+// sent automatically. Forward the access token so the server can verify the
+// caller and decide whether paid prompt content is included in the response.
+setAuthTokenGetter(async () => {
+  const { data } = await supabase.auth.getSession();
+  return data.session?.access_token ?? null;
+});
+
 import { checkRateLimit } from "@/lib/rate-limiting";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { AuthDialog } from "@/components/auth-dialog";
