@@ -3,7 +3,12 @@ import { motion } from "framer-motion";
 import { Check, Zap } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { STRIPE_PLANS } from "@/lib/stripe";
+import { supabase } from "@/lib/supabase";
 import { Link } from "wouter";
+
+// Statuses that mean the user already has a subscription with Stripe, so a
+// second Checkout session would create a duplicate rather than change plan.
+const MANAGED_STATUSES = ["active", "past_due"];
 
 type BillingPeriod = "monthly" | "annual";
 
@@ -68,6 +73,39 @@ export default function Pricing() {
 
     setLoading(true);
     try {
+      // Shared guard for every paid plan: an existing subscriber manages their
+      // plan in the Stripe billing portal instead of starting a new checkout.
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("subscription_status, stripe_customer_id")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (
+        profile?.stripe_customer_id &&
+        MANAGED_STATUSES.includes(profile.subscription_status)
+      ) {
+        const { data: session } = await supabase.auth.getSession();
+        const portalResponse = await fetch("/api/stripe/portal", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.session?.access_token ?? ""}`,
+          },
+        });
+
+        if (portalResponse.ok) {
+          const { url } = await portalResponse.json();
+          if (url) {
+            window.location.href = url;
+            return;
+          }
+        }
+        // Fall through to checkout if the portal is unavailable, so the button
+        // is never a dead end.
+        console.error("Could not open billing portal; falling back to checkout");
+      }
+
       const response = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
