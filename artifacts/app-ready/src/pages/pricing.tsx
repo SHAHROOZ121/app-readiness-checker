@@ -15,7 +15,9 @@ type BillingPeriod = "monthly" | "annual";
 export default function Pricing() {
   const { user } = useAuth();
   const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>("monthly");
-  const [loading, setLoading] = useState(false);
+  // Tracks which plan is mid-request so only the clicked button shows a
+  // pending state, rather than every paid button at once.
+  const [loadingTier, setLoadingTier] = useState<string | null>(null);
 
   const plans = [
     {
@@ -71,20 +73,25 @@ export default function Pricing() {
       return;
     }
 
-    setLoading(true);
+    setLoadingTier(tier);
     try {
-      // Shared guard for every paid plan: an existing subscriber manages their
-      // plan in the Stripe billing portal instead of starting a new checkout.
+      // Shared guard for every paid plan. A subscriber must never reach
+      // Checkout: a second session would create a second active subscription
+      // and bill them twice. Instead:
+      //   same plan  -> billing portal (manage / cancel)
+      //   other plan -> portal subscription-update flow (proration applied)
       const { data: profile } = await supabase
         .from("profiles")
-        .select("subscription_status, stripe_customer_id")
+        .select("subscription_status, stripe_customer_id, subscription_tier")
         .eq("id", user.id)
         .maybeSingle();
 
-      if (
-        profile?.stripe_customer_id &&
-        MANAGED_STATUSES.includes(profile.subscription_status)
-      ) {
+      const hasSubscription =
+        !!profile?.stripe_customer_id &&
+        MANAGED_STATUSES.includes(profile.subscription_status);
+
+      if (hasSubscription) {
+        const intent = profile?.subscription_tier === tier ? "manage" : "update";
         const { data: session } = await supabase.auth.getSession();
         const portalResponse = await fetch("/api/stripe/portal", {
           method: "POST",
@@ -92,18 +99,21 @@ export default function Pricing() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${session.session?.access_token ?? ""}`,
           },
+          body: JSON.stringify({ intent }),
         });
 
-        if (portalResponse.ok) {
-          const { url } = await portalResponse.json();
-          if (url) {
-            window.location.href = url;
-            return;
-          }
+        if (!portalResponse.ok) {
+          throw new Error("Could not open the billing portal");
         }
-        // Fall through to checkout if the portal is unavailable, so the button
-        // is never a dead end.
-        console.error("Could not open billing portal; falling back to checkout");
+
+        const { url } = await portalResponse.json();
+        if (!url) {
+          throw new Error("Billing portal URL was not returned");
+        }
+
+        // Deliberately no fallback to Checkout here - see comment above.
+        window.location.href = url;
+        return;
       }
 
       const response = await fetch("/api/stripe/checkout", {
@@ -130,9 +140,9 @@ export default function Pricing() {
       window.location.href = url;
     } catch (error) {
       console.error("Checkout error:", error);
-      alert("Failed to start checkout. Please try again.");
+      alert("Something went wrong. Please try again.");
     } finally {
-      setLoading(false);
+      setLoadingTier(null);
     }
   };
 
@@ -233,10 +243,10 @@ export default function Pricing() {
                 ) : (
                   <button
                     onClick={() => handleCheckout(plan.tier)}
-                    disabled={loading || plan.ctaDisabled}
+                    disabled={loadingTier !== null || plan.ctaDisabled}
                     className="w-full bg-primary text-primary-foreground py-2 rounded-lg font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 mb-6"
                   >
-                    {loading ? "Processing..." : plan.cta}
+                    {loadingTier === plan.tier ? "Processing..." : plan.cta}
                   </button>
                 )}
 
